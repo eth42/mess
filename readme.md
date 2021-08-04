@@ -3,7 +3,7 @@
 This repository contains a demo implementation of the MESS framework from the paper with above title.
 The code provided here consists of a small collection of plotting functions based on `plotly`, a few implementations of ID estimators, the MESS framework code as well as a small wrapper function for SMOTE based on the `imblearn` package, and a demo application `demo.py` with configurable parameters that runs the MESS framework and generates two plots:
 
-- An interactive scatter plot that shows the original data as well as supersampled data colored by their respective ID estimates, and
+- An interactive scatter plot that shows the original data as well as supersampled data colored by their respective ID estimates and supersampling supported ID estimates, and
 - a histogram plot containing ID histograms of both the original and supersampled data set as well as ID estimates computed for the original data set by using neighborhoods from the supersampled data sets.
 
 The ID estimator is also configurable.

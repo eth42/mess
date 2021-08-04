@@ -9,6 +9,9 @@ The code provided here consists of a small collection of plotting functions base
 The ID estimator is also configurable.
 If no ID estimator is specified (`None`), scatter plots are colored by vector norms and no histogram plot is created (generally much faster, as ID estimates can be slow).
 
+This demo code also includes alternative supersample generation rules, candidate weighting schemes and distance rules.
+Their performance is generally below those discussed in the paper and I do not recommend to use them, but they are here in case you want to experiment with them.
+
 ## Setup
 
 Simply clone the repository to your local drive and install the required packages via

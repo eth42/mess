@@ -20,14 +20,14 @@ class CORRECTION(Enum):
 	# Defines what correction scheme to use.
 	NONE = 0 # Do not apply correction
 	MEAN = 1 # Correction using mean of candidates without exponent
-	IDW = 2 # Correction using inverse distance weights without exponent
+	IDW = 2 # Proposed weighting scheme: Correction using inverse distance weights without exponent
 	IDW_ID = 3 # Correction using IDW with fixed exponent
 	IDW_IDEST = 4 # Correction using IDW and exponents from ID estimator
 
 class CANDIDATES(Enum):
 	# Defines how to produce candidates for the weighted mean in the correction step.
-	COVARIANCE = 0 # Compute correction candidates by applying the covariance matrix to the supersample
-	CHOLESKY = 1 # Compute correction candidates by applying the cholesky matrix to the supersample
+	COVARIANCE = 0 # Correction rule C1: Compute correction candidates by applying the covariance matrix to the supersample
+	CHOLESKY = 1 # Correction rule C2: Compute correction candidates by applying the cholesky matrix to the supersample
 
 class DISTANCE(Enum):
 	# Defines what distance to use for distance-based weighting schemes where distances
@@ -35,9 +35,9 @@ class DISTANCE(Enum):
 	SYM_MAHAL_MULT = 0 # Symmetrized Mahalanobis distance with multiplication (square root of product)
 	SYM_MAHAL_ADD = 1 # Symmetrized Mahalanobis distance with addition (mean of distances)
 	SYM_MAHAL_SQ_ADD = 2 # Symmetrized Mahalanobis distance with addition (square root of mean of squared distances)
-	MAHAL_FORWARD = 3 # Mahalanobis distance using the covariance matrix of the original data point
-	MAHAL_BACKWARD = 4 # Mahalanobis distance using the covariance matrix of the supersampled point
-	EUCLIDEAN = 5 # Euclidean distance
+	MAHAL_FORWARD = 3 # Weighting rule W2: Mahalanobis distance using the covariance matrix of the original data point
+	MAHAL_BACKWARD = 4 # Weighting rule W3: Mahalanobis distance using the covariance matrix of the supersampled point
+	EUCLIDEAN = 5 # Weighting rule W1: Euclidean distance
 
 # Helper functions
 @njit

@@ -65,9 +65,9 @@ X_mins = np.min(X_full,axis=0)
 X_maxs = np.max(X_full,axis=0)
 X_full = np.concatenate([X_full,np.random.sample((100,3))*(X_maxs-X_mins)+X_mins])
 # Probably reduce the size of the data set to lower computation time.
-X = X_full[:500]
+X_reduced = X_full[:500]
 # Otherwise uncomment this line. The variables X_full and X need to be defined.
-# X = X_full
+# X_reduced = X_full
 
 # Limitations for the color scale in scatter plots should be data set dependent.
 # The swiss roll is a 2d manifold in 3d, whereby [1,3] is a reasonable range
@@ -90,34 +90,83 @@ elif supersampling_method == SUPERSAMPLER.SMOTE:
 	corrected_supersampler = lambda X: supersample_smote(X,k1,ext)
 
 
-
-# Supersample data set
-print("Supersampling data without correction.")
-X_ext = supersampler(X)
-print("Supersampling data with correction.")
-X_ext_corr = corrected_supersampler(X)
-
 # Collection of all data sets to compute IDs and plots for.
-# X_full is reduced to the size of X_ext to not fry the CPU while rendering.
-Xs = [np.random.permutation(X_full)[:X_ext.shape[0]], X, X_ext, X_ext_corr]
-Xnames = ["Full original data", "Reduced original data", "Supersampled data", "Corrected supersampled data"]
-scales = [1,1,ext,ext]
-if X_full.shape[0] == X.shape[0]:
-	Xs, Xnames, scales = Xs[1:], Xnames[1:], scales[1:]
+# X_full is reduced to the size of X * ext to not fry the CPU while rendering.
+Xs = [np.random.permutation(X_full)[:X_reduced.shape[0] * ext], X_reduced]
+Xnames = ["Full original data", "Reduced original data"]
+scales = [1,1]
+if X_full.shape[0] == X_reduced.shape[0]:
+	Xs, Xnames, scales = Xs[:1], Xnames[:1], scales[:1]
 
 
-# Compute ID estimates of all points of all data sets for coloring the scatter plot
-id_estimates = [
-	(
+# Supersample data set (without correction)
+print("Supersampling data without correction.")
+X_ext = supersampler(X_reduced)
+Xs.append(X_ext)
+Xnames.append("Supersampled data")
+scales.append(ext)
+n_supersamples = 1
+# Supersample data set with correction if MESS
+if supersampling_method == SUPERSAMPLER.MESS:
+	print("Supersampling data with correction.")
+	X_ext_corr = corrected_supersampler(X_reduced)
+	Xs.append(X_ext_corr)
+	Xnames.append("Corrected supersampled data")
+	scales.append(ext)
+	n_supersamples += 1
+
+
+
+
+if estimator is None:
+	# Use vector norms instead of ID estimates
+	id_estimates = [
 		np.linalg.norm(lX,axis=1)
-		if estimator is None else
-		estimator(lX,k1*scale)
-	)
-	for lX,scale in tqdm(
-		list(zip(Xs,scales)),
-		desc="Computing all required ID estimates (or vector norms) for visualization"
-	)
-]
+		for lX,scale in tqdm(
+			list(zip(Xs,scales)),
+			desc="Computing all required ID estimates (or vector norms) for visualization"
+		)
+	]
+else:
+	# Compute ID estimates of all points of all data sets for coloring the scatter plot
+	id_estimates = [
+		(
+			np.linalg.norm(lX,axis=1)
+			if estimator is None else
+			estimator(lX,k1*scale)
+		)
+		for lX,scale in tqdm(
+			list(zip(Xs,scales)),
+			desc="Computing all required ID estimates (or vector norms) for visualization"
+		)
+	]
+	# Computed extended ID estimates using the supersampled points
+	# for the original data sets.
+	ext_Xs = [
+		a
+		for a in Xs[:-n_supersamples]
+		for b in Xs[-n_supersamples:]
+	]
+	ext_id_estimates = [
+		ext_estimator(lX, lX_ext, k1*ext)
+		for lX,lX_ext in tqdm(
+			[
+				[a,b]
+				for a in Xs[:-n_supersamples]
+				for b in Xs[-n_supersamples:]
+			],
+			desc="Computing ID estimates of original data with supersamples"
+		)
+	]
+	ext_names = [
+		"{:} using {:}".format(a,b.lower())
+		for a in Xnames[:-n_supersamples]
+		for b in Xnames[-n_supersamples:]
+	]
+	# Override lists for plotting
+	Xs = [*Xs,*ext_Xs]
+	Xnames = [*Xnames,*ext_names]
+	id_estimates = [*id_estimates,*ext_id_estimates]
 
 
 
@@ -176,24 +225,6 @@ animated_figure(
 
 # Render histograms and display in browser
 if not ext_estimator is None:
-	# Computed extended ID estimates using the supersampled points
-	# for the original data sets.
-	ext_id_estimates = [
-		ext_estimator(lX, lX_ext, k1*ext)
-		for lX,lX_ext in tqdm(
-			[
-				[a,b]
-				for a in Xs[:-2]
-				for b in Xs[-2:]
-			],
-			desc="Computing ID estimates of original data with supersamples"
-		)
-	]
-	ext_id_names = [
-		"{:} using {:}".format(a,b.lower())
-		for a in Xnames[:-2]
-		for b in Xnames[-2:]
-	]
 	go.Figure(
 		[
 			go.Histogram(
@@ -207,10 +238,7 @@ if not ext_estimator is None:
 					size=.05
 				)
 			)
-			for ids,name in zip(
-				[*id_estimates,*ext_id_estimates],
-				[*Xnames,*ext_id_names]
-			)
+			for ids,name in zip(id_estimates,Xnames)
 		],
 		layout=dict(
 			barmode="overlay",
